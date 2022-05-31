@@ -1,0 +1,50 @@
+
+<!doctype html>
+<html lang="en-us">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style>
+  body {
+  	 margin: 0px;
+  	 background-color: black;
+  }
+  .app {
+    display: block;
+    border: 0px;
+    margin: 0px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+  }
+</style>
+</head>
+<body>
+<canvas class="app" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
+<script src="../enable-threads.js"></script>
+<script type='text/javascript'>
+  var Module = {
+    preRun: [],
+    postRun: [],
+    canvas: (() => {
+      var canvas = document.getElementById('canvas');
+      canvas.addEventListener("webglcontextlost", (e) => {
+        alert('WebGL context lost. You will need to reload the page.');
+        e.preventDefault();
+      }, false);
+      return canvas;
+    })(),
+    setStatus: (text) => { },
+    monitorRunDependencies: (left) => { }
+  };
+  window.onerror = (event) => {
+    console.error('onerror: ' + event.message);
+  };
+</script>
+<script async type="text/javascript" src="data.js"></script>
+<script async type="text/javascript" src="crown-development.js"></script>
+</body>
+</html>
