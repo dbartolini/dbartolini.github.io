@@ -78,23 +78,27 @@ html {
 
 .timer {
   position: absolute;
-  left: 50%;
   top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
 </style>
 </head>
-<div class="timer">
-  <div class="block"><span id="days"></span>
+<span class="timer">
+  <span class="block"><span id="days"></span>
     <p>DAYS</p>
-  </div>
-  <div class="block"><span id="hours"></span>
+  </span>
+  <span class="block"><span id="hours"></span>
     <p>HOURS</p>
-  </div>
-  <div class="block"><span id="minutes"></span>
-    <p>MINS</p>
-  </div>
-  <div class="block"><span id="seconds"></span>
-    <p>SECS</p>
-  </div>
-</div>
+  </span>
+  <span class="block"><span id="minutes"></span>
+    <p>MINUTES</p>
+  </span>
+  <span class="block"><span id="seconds"></span>
+    <p>SECONDS</p>
+  </span>
+</span>
