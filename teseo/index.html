@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+function countdown(dateEnd) {
+  var timer, days, hours, minutes, seconds;
+
+  dateEnd = new Date(dateEnd);
+  dateEnd = dateEnd.getTime();
+
+  if (isNaN(dateEnd)) {
+    return;
+  }
+
+  timer = setInterval(calculate, 1000);
+
+  function calculate() {
+    var dateStart = new Date();
+    var dateStart = new Date(
+      dateStart.getUTCFullYear(),
+      dateStart.getUTCMonth(),
+      dateStart.getUTCDate(),
+      dateStart.getUTCHours(),
+      dateStart.getUTCMinutes(),
+      dateStart.getUTCSeconds()
+    );
+    var timeRemaining = parseInt((dateEnd - dateStart.getTime()) / 1000);
+
+    if (timeRemaining >= 0) {
+      days = parseInt(timeRemaining / 86400);
+      timeRemaining = timeRemaining % 86400;
+      hours = parseInt(timeRemaining / 3600);
+      timeRemaining = timeRemaining % 3600;
+      minutes = parseInt(timeRemaining / 60);
+      timeRemaining = timeRemaining % 60;
+      seconds = parseInt(timeRemaining);
+
+      document.getElementById("days").innerHTML = parseInt(days, 10);
+      document.getElementById("hours").innerHTML = ("0" + hours).slice(-2);
+      document.getElementById("minutes").innerHTML = ("0" + minutes).slice(-2);
+      document.getElementById("seconds").innerHTML = ("0" + seconds).slice(-2);
+    } else {
+      return;
+    }
+  }
+
+  function display(days, hours, minutes, seconds) {}
+}
+
+countdown("09/27/2024 04:15:00 PM");
+</script>
+<style>
+html {
+  background-color: #9d9d9c;
+}
+
+.block {
+  border: 3px solid #8d8d8c;
+  font: 80px Arial;
+  text-align: center;
+  text-shadow: 1px 1px #111;
+  background: #1b357b;
+  padding: 16px 16px 0px 16px;
+  border-radius: 6px;
+  margin: 20px 10px auto;
+  float: left;
+  color: #9d9d9c;
+}
+
+.block p {
+  font: 18px Arial;
+  text-align: center;
+  color: #9d9d9c;
+  margin: 0px;
+  padding-top: 10px;
+  padding-bottom: 6px;
+}
+
+.timer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+</style>
+</head>
+<div class="timer">
+  <div class="block"><span id="days"></span>
+    <p>DAYS</p>
+  </div>
+  <div class="block"><span id="hours"></span>
+    <p>HOURS</p>
+  </div>
+  <div class="block"><span id="minutes"></span>
+    <p>MINS</p>
+  </div>
+  <div class="block"><span id="seconds"></span>
+    <p>SECS</p>
+  </div>
+</div>
