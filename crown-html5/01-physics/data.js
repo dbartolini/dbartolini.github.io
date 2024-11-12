@@ -18,8 +18,8 @@
         // web worker
         PACKAGE_PATH = encodeURIComponent(location.pathname.toString().substring(0, location.pathname.toString().lastIndexOf('/')) + '/');
       }
-      var PACKAGE_NAME = 'data.data';
-      var REMOTE_PACKAGE_BASE = 'data.data';
+      var PACKAGE_NAME = '/tmp/deploy/html5/wasm/development/01-physics/data.bin';
+      var REMOTE_PACKAGE_BASE = 'data.bin';
       if (typeof Module['locateFilePackage'] === 'function' && !Module['locateFile']) {
         Module['locateFile'] = Module['locateFilePackage'];
         err('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
@@ -150,10 +150,10 @@ Module['FS_createPath']("/", "data", true, true);
           var files = metadata['files'];
           for (var i = 0; i < files.length; ++i) {
             DataRequest.prototype.requests[files[i].filename].onload();
-          }          Module['removeRunDependency']('datafile_data.data');
+          }          Module['removeRunDependency']('datafile_/tmp/deploy/html5/wasm/development/01-physics/data.bin');
 
       };
-      Module['addRunDependency']('datafile_data.data');
+      Module['addRunDependency']('datafile_/tmp/deploy/html5/wasm/development/01-physics/data.bin');
 
       if (!Module.preloadResults) Module.preloadResults = {};
 
@@ -174,6 +174,6 @@ Module['FS_createPath']("/", "data", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/data/59eab20db8fd7280", "start": 0, "end": 5808319}, {"filename": "/data/5f85a4535e0b940f", "start": 5808319, "end": 5981947}, {"filename": "/data/707d91f869594147", "start": 5981947, "end": 5982223}, {"filename": "/data/761287a68fafa7c8", "start": 5982223, "end": 5982559}, {"filename": "/data/c7fdf87fde0bf8dc", "start": 5982559, "end": 6045546}, {"filename": "/data/e805cdd4e9592d94", "start": 6045546, "end": 6045641}], "remote_package_size": 6045641});
+    loadPackage({"files": [{"filename": "/data/1e5699c954a7cd5b", "start": 0, "end": 70376}, {"filename": "/data/31aeac6263f51813", "start": 70376, "end": 70618}, {"filename": "/data/59eab20db8fd7280", "start": 70618, "end": 3875612}, {"filename": "/data/5f85a4535e0b940f", "start": 3875612, "end": 4049908}, {"filename": "/data/707d91f869594147", "start": 4049908, "end": 4050184}, {"filename": "/data/761287a68fafa7c8", "start": 4050184, "end": 4050520}, {"filename": "/data/c7fdf87fde0bf8dc", "start": 4050520, "end": 4116944}, {"filename": "/data/e805cdd4e9592d94", "start": 4116944, "end": 4117039}], "remote_package_size": 4117039});
 
   })();
