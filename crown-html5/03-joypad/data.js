@@ -18,8 +18,8 @@
         // web worker
         PACKAGE_PATH = encodeURIComponent(location.pathname.toString().substring(0, location.pathname.toString().lastIndexOf('/')) + '/');
       }
-      var PACKAGE_NAME = 'data.data';
-      var REMOTE_PACKAGE_BASE = 'data.data';
+      var PACKAGE_NAME = '/tmp/deploy/html5/wasm/development/03-joypad/data.bin';
+      var REMOTE_PACKAGE_BASE = 'data.bin';
       if (typeof Module['locateFilePackage'] === 'function' && !Module['locateFile']) {
         Module['locateFile'] = Module['locateFilePackage'];
         err('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
@@ -150,10 +150,10 @@ Module['FS_createPath']("/", "data", true, true);
           var files = metadata['files'];
           for (var i = 0; i < files.length; ++i) {
             DataRequest.prototype.requests[files[i].filename].onload();
-          }          Module['removeRunDependency']('datafile_data.data');
+          }          Module['removeRunDependency']('datafile_/tmp/deploy/html5/wasm/development/03-joypad/data.bin');
 
       };
-      Module['addRunDependency']('datafile_data.data');
+      Module['addRunDependency']('datafile_/tmp/deploy/html5/wasm/development/03-joypad/data.bin');
 
       if (!Module.preloadResults) Module.preloadResults = {};
 
@@ -174,6 +174,6 @@ Module['FS_createPath']("/", "data", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/data/59eab20db8fd7280", "start": 0, "end": 51499}, {"filename": "/data/5f85a4535e0b940f", "start": 51499, "end": 225127}, {"filename": "/data/707d91f869594147", "start": 225127, "end": 225403}, {"filename": "/data/761287a68fafa7c8", "start": 225403, "end": 225736}, {"filename": "/data/c7fdf87fde0bf8dc", "start": 225736, "end": 288723}, {"filename": "/data/e805cdd4e9592d94", "start": 288723, "end": 288818}], "remote_package_size": 288818});
+    loadPackage({"files": [{"filename": "/data/1e5699c954a7cd5b", "start": 0, "end": 70376}, {"filename": "/data/31aeac6263f51813", "start": 70376, "end": 70618}, {"filename": "/data/59eab20db8fd7280", "start": 70618, "end": 124386}, {"filename": "/data/5f85a4535e0b940f", "start": 124386, "end": 298682}, {"filename": "/data/707d91f869594147", "start": 298682, "end": 298958}, {"filename": "/data/761287a68fafa7c8", "start": 298958, "end": 299291}, {"filename": "/data/c7fdf87fde0bf8dc", "start": 299291, "end": 365715}, {"filename": "/data/e805cdd4e9592d94", "start": 365715, "end": 365810}], "remote_package_size": 365810});
 
   })();
