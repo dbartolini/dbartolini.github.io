@@ -1,35 +1,31 @@
 
-  var Module = typeof Module !== 'undefined' ? Module : {};
+  var Module = typeof Module != 'undefined' ? Module : {};
 
-  if (!Module.expectedDataFileDownloads) {
-    Module.expectedDataFileDownloads = 0;
-  }
-
-  Module.expectedDataFileDownloads++;
-  (function() {
+  Module['expectedDataFileDownloads'] ??= 0;
+  Module['expectedDataFileDownloads']++;
+  (() => {
     // Do not attempt to redownload the virtual filesystem data when in a pthread or a Wasm Worker context.
-    if (Module['ENVIRONMENT_IS_PTHREAD'] || Module['$ww']) return;
-    var loadPackage = function(metadata) {
+    var isPthread = typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD;
+    var isWasmWorker = typeof ENVIRONMENT_IS_WASM_WORKER != 'undefined' && ENVIRONMENT_IS_WASM_WORKER;
+    if (isPthread || isWasmWorker) return;
+    var isNode = typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string';
+    function loadPackage(metadata) {
 
       var PACKAGE_PATH = '';
       if (typeof window === 'object') {
-        PACKAGE_PATH = window['encodeURIComponent'](window.location.pathname.toString().substring(0, window.location.pathname.toString().lastIndexOf('/')) + '/');
+        PACKAGE_PATH = window['encodeURIComponent'](window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) + '/');
       } else if (typeof process === 'undefined' && typeof location !== 'undefined') {
         // web worker
-        PACKAGE_PATH = encodeURIComponent(location.pathname.toString().substring(0, location.pathname.toString().lastIndexOf('/')) + '/');
+        PACKAGE_PATH = encodeURIComponent(location.pathname.substring(0, location.pathname.lastIndexOf('/')) + '/');
       }
-      var PACKAGE_NAME = '/tmp/deploy/html5/wasm/development/03-joypad/data.bin';
+      var PACKAGE_NAME = '/tmp/html5/wasm/development/03-joypad/data.bin';
       var REMOTE_PACKAGE_BASE = 'data.bin';
-      if (typeof Module['locateFilePackage'] === 'function' && !Module['locateFile']) {
-        Module['locateFile'] = Module['locateFilePackage'];
-        err('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
-      }
       var REMOTE_PACKAGE_NAME = Module['locateFile'] ? Module['locateFile'](REMOTE_PACKAGE_BASE, '') : REMOTE_PACKAGE_BASE;
 var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
 
       function fetchRemotePackage(packageName, packageSize, callback, errback) {
-        if (typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string') {
-          require('fs').readFile(packageName, function(err, contents) {
+        if (isNode) {
+          require('fs').readFile(packageName, (err, contents) => {
             if (err) {
               errback(err);
             } else {
@@ -38,51 +34,58 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
           });
           return;
         }
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', packageName, true);
-        xhr.responseType = 'arraybuffer';
-        xhr.onprogress = function(event) {
-          var url = packageName;
-          var size = packageSize;
-          if (event.total) size = event.total;
-          if (event.loaded) {
-            if (!xhr.addedTotal) {
-              xhr.addedTotal = true;
-              if (!Module.dataFileDownloads) Module.dataFileDownloads = {};
-              Module.dataFileDownloads[url] = {
-                loaded: event.loaded,
-                total: size
-              };
-            } else {
-              Module.dataFileDownloads[url].loaded = event.loaded;
+        Module['dataFileDownloads'] ??= {};
+        fetch(packageName)
+          .catch((cause) => Promise.reject(new Error(`Network Error: ${packageName}`, {cause}))) // If fetch fails, rewrite the error to include the failing URL & the cause.
+          .then((response) => {
+            if (!response.ok) {
+              return Promise.reject(new Error(`${response.status}: ${response.url}`));
             }
-            var total = 0;
-            var loaded = 0;
-            var num = 0;
-            for (var download in Module.dataFileDownloads) {
-            var data = Module.dataFileDownloads[download];
-              total += data.total;
-              loaded += data.loaded;
-              num++;
+
+            if (!response.body && response.arrayBuffer) { // If we're using the polyfill, readers won't be available...
+              return response.arrayBuffer().then(callback);
             }
-            total = Math.ceil(total * Module.expectedDataFileDownloads/num);
-            if (Module['setStatus']) Module['setStatus'](`Downloading data... (${loaded}/${total})`);
-          } else if (!Module.dataFileDownloads) {
-            if (Module['setStatus']) Module['setStatus']('Downloading data...');
-          }
-        };
-        xhr.onerror = function(event) {
-          throw new Error("NetworkError for: " + packageName);
-        }
-        xhr.onload = function(event) {
-          if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
-            var packageData = xhr.response;
-            callback(packageData);
-          } else {
-            throw new Error(xhr.statusText + " : " + xhr.responseURL);
-          }
-        };
-        xhr.send(null);
+
+            const reader = response.body.getReader();
+            const iterate = () => reader.read().then(handleChunk).catch((cause) => {
+              return Promise.reject(new Error(`Unexpected error while handling : ${response.url} ${cause}`, {cause}));
+            });
+
+            const chunks = [];
+            const headers = response.headers;
+            const total = Number(headers.get('Content-Length') ?? packageSize);
+            let loaded = 0;
+
+            const handleChunk = ({done, value}) => {
+              if (!done) {
+                chunks.push(value);
+                loaded += value.length;
+                Module['dataFileDownloads'][packageName] = {loaded, total};
+
+                let totalLoaded = 0;
+                let totalSize = 0;
+
+                for (const download of Object.values(Module['dataFileDownloads'])) {
+                  totalLoaded += download.loaded;
+                  totalSize += download.total;
+                }
+
+                Module['setStatus']?.(`Downloading data... (${totalLoaded}/${totalSize})`);
+                return iterate();
+              } else {
+                const packageData = new Uint8Array(chunks.map((c) => c.length).reduce((a, b) => a + b, 0));
+                let offset = 0;
+                for (const chunk of chunks) {
+                  packageData.set(chunk, offset);
+                  offset += chunk.length;
+                }
+                callback(packageData.buffer);
+              }
+            };
+
+            Module['setStatus']?.('Downloading data...');
+            return iterate();
+          });
       };
 
       function handleError(error) {
@@ -92,7 +95,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
       var fetchedCallback = null;
       var fetched = Module['getPreloadedPackage'] ? Module['getPreloadedPackage'](REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE) : null;
 
-      if (!fetched) fetchRemotePackage(REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE, function(data) {
+      if (!fetched) fetchRemotePackage(REMOTE_PACKAGE_NAME, REMOTE_PACKAGE_SIZE, (data) => {
         if (fetchedCallback) {
           fetchedCallback(data);
           fetchedCallback = null;
@@ -101,7 +104,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
         }
       }, handleError);
 
-    function runWithFS() {
+    function runWithFS(Module) {
 
       function assert(check, msg) {
         if (!check) throw msg + new Error().stack;
@@ -150,14 +153,14 @@ Module['FS_createPath']("/", "data", true, true);
           var files = metadata['files'];
           for (var i = 0; i < files.length; ++i) {
             DataRequest.prototype.requests[files[i].filename].onload();
-          }          Module['removeRunDependency']('datafile_/tmp/deploy/html5/wasm/development/03-joypad/data.bin');
+          }          Module['removeRunDependency']('datafile_/tmp/html5/wasm/development/03-joypad/data.bin');
 
       };
-      Module['addRunDependency']('datafile_/tmp/deploy/html5/wasm/development/03-joypad/data.bin');
+      Module['addRunDependency']('datafile_/tmp/html5/wasm/development/03-joypad/data.bin');
 
-      if (!Module.preloadResults) Module.preloadResults = {};
+      Module['preloadResults'] ??= {};
 
-      Module.preloadResults[PACKAGE_NAME] = {fromCache: false};
+      Module['preloadResults'][PACKAGE_NAME] = {fromCache: false};
       if (fetched) {
         processPackageData(fetched);
         fetched = null;
@@ -167,13 +170,12 @@ Module['FS_createPath']("/", "data", true, true);
 
     }
     if (Module['calledRun']) {
-      runWithFS();
+      runWithFS(Module);
     } else {
-      if (!Module['preRun']) Module['preRun'] = [];
-      Module["preRun"].push(runWithFS); // FS is not initialized yet, wait for it
+      (Module['preRun'] ??= []).push(runWithFS); // FS is not initialized yet, wait for it
     }
 
     }
-    loadPackage({"files": [{"filename": "/data/1e5699c954a7cd5b", "start": 0, "end": 70376}, {"filename": "/data/31aeac6263f51813", "start": 70376, "end": 70618}, {"filename": "/data/59eab20db8fd7280", "start": 70618, "end": 124386}, {"filename": "/data/5f85a4535e0b940f", "start": 124386, "end": 298682}, {"filename": "/data/707d91f869594147", "start": 298682, "end": 298958}, {"filename": "/data/761287a68fafa7c8", "start": 298958, "end": 299291}, {"filename": "/data/c7fdf87fde0bf8dc", "start": 299291, "end": 365715}, {"filename": "/data/e805cdd4e9592d94", "start": 365715, "end": 365810}], "remote_package_size": 365810});
+    loadPackage({"files": [{"filename": "/data/1e5699c954a7cd5b", "start": 0, "end": 148424}, {"filename": "/data/31aeac6263f51813", "start": 148424, "end": 148666}, {"filename": "/data/59eab20db8fd7280", "start": 148666, "end": 341722}, {"filename": "/data/5f85a4535e0b940f", "start": 341722, "end": 594202}, {"filename": "/data/707d91f869594147", "start": 594202, "end": 594478}, {"filename": "/data/761287a68fafa7c8", "start": 594478, "end": 594811}, {"filename": "/data/c7fdf87fde0bf8dc", "start": 594811, "end": 739299}, {"filename": "/data/e805cdd4e9592d94", "start": 739299, "end": 739394}], "remote_package_size": 739394});
 
   })();
