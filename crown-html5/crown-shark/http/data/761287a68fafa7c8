@@ -1,0 +1,32 @@
+// Lua script to launch on boot
+boot_script = "core/game/boot"
+
+// Package to load on boot
+boot_package = "boot"
+
+window_title = "Crown Shark"
+
+html5 = {
+	save_dir = "$USER_DATA/crown-shark"
+	renderer = {
+		fullscreen = true
+	}
+}
+
+// Linux-only configs
+linux = {
+	save_dir = "$USER_DATA/crown-shark"
+	renderer = {
+		resolution = [ 1280 720 ]
+		fullscreen = true
+	}
+}
+
+// Windows-only configs
+windows = {
+	save_dir = "$USER_DATA/crown-shark"
+	renderer = {
+		resolution = [ 1280 720 ]
+		fullscreen = true
+	}
+}
